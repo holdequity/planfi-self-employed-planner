@@ -34,8 +34,9 @@ If the user has (or wants) a full household model, call **`generate_financial_pl
 **capture the returned `plan_id`**. `analyze_self_employed_retirement` accepts `{ plan_id }`, which
 lets the server derive the owner's **age**, **filing status**, and **other taxable income** (e.g. a
 spouse's W-2) from the saved plan's earners instead of you re-sending them. `generate_financial_plan`
-also returns a **`share_url`** (planfi.app) — the specialist tools do **not** emit one, so this is
-the way to give the user a sharable plan.
+also returns a **`share_url`** (planfi.app). `analyze_self_employed_retirement` never emits a
+`share_url`; `optimize_multi_year_tax` emits one **only** when you pass a `{ plan_id }` that resolves
+to a saved plan. Minting a `plan_id` here is the reliable way to give the user a sharable plan.
 
 This step is optional: the tool runs cold from raw inputs too. Prefer the plan path when the session
 already has a model or the user wants a sharable artifact.
@@ -47,10 +48,12 @@ already has a model or the user wants a sharable artifact.
 
 ## Step 2 — Route by intent
 
-The single specialist tool here is `analyze_self_employed_retirement`. **REQUIRED:** `entity_type`
-(`sole_prop` | `single_member_llc` | `s_corp` | `partnership`) plus the income figure for that
-entity. Pass `{ plan_id }` to resolve age / filing status / other income; otherwise pass them
-inline. Everything else has a server default (reported back — see Step 3).
+The single specialist tool here is `analyze_self_employed_retirement`. The only **REQUIRED** field is
+`entity_type` (`sole_prop` | `single_member_llc` | `s_corp` | `partnership`). Every other field —
+including `net_business_income` (defaults to 200000) — is optional with a server default, but you
+should always pass the entity's income figure so the result reflects the user's actual numbers. Pass
+`{ plan_id }` to resolve age / filing status / other income; otherwise pass them inline. Every
+omitted default is reported back (see Step 3).
 
 ### "How much can I shelter? / which account — Solo 401(k), SEP, or SIMPLE?" → `analyze_self_employed_retirement`
 For `sole_prop` / `single_member_llc` / `partnership`, pass `net_business_income` (the owner's net
@@ -105,8 +108,10 @@ IRMAA-tier aware year-by-year plan) — pass `{ plan_id }` when you have one. RE
 - **`next_actions[]`** — each `{ tool, why, prefilled_args }` (carrying `{ plan_id }` when
   available). Follow these server-suggested chains (often `optimize_multi_year_tax` or
   `generate_financial_plan`) rather than guessing the next call.
-- **`share_url`** — only `generate_financial_plan` returns one. If you minted a `plan_id`, offer that
-  plan's `share_url` so the user can open the full interactive plan on planfi.app.
+- **`share_url`** — `generate_financial_plan` always returns one; `optimize_multi_year_tax` returns
+  one only when called with a plan-resolving `{ plan_id }`. `analyze_self_employed_retirement` does
+  not emit one. If you minted a `plan_id`, offer that plan's `share_url` so the user can open the full
+  interactive plan on planfi.app.
 
 ## Recommended call sequence (typical session)
 
