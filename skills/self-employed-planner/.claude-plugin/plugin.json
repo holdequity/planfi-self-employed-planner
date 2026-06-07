@@ -1,0 +1,13 @@
+{
+  "name": "self-employed-planner",
+  "version": "1.0.0",
+  "description": "Plan self-employed / business-owner retirement (Solo 401k vs SEP vs SIMPLE) and the §199A QBI deduction via the planfi MCP",
+  "license": "MIT",
+  "author": {
+    "name": "holdequity",
+    "url": "https://planfi.app"
+  },
+  "homepage": "https://github.com/holdequity/planfi-self-employed-planner",
+  "repository": "https://github.com/holdequity/planfi-self-employed-planner",
+  "keywords": []
+}
