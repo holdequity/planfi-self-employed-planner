@@ -15,6 +15,7 @@ contractors):
 - **Which account wins** — Solo 401(k) vs SEP-IRA vs SIMPLE IRA?
 - **What's my §199A QBI deduction** (taxable-income thresholds, W-2-wage / 2.5%-UBIA cap, SSTB phaseout)?
 - **(S-corp)** What **reasonable W-2 salary** optimizes payroll tax ↔ QBI ↔ retirement contribution room?
+- **Quarterly estimated taxes & safe-harbor** — what to pay each quarter and the 90%/110% safe-harbor thresholds to avoid an underpayment penalty (`analyze_estimated_taxes`)?
 
 It wraps `analyze_self_employed_retirement` (the headline tool) and chains `optimize_multi_year_tax`
 for cross-year coordination; optionally mint a `plan_id` via `generate_financial_plan` for a

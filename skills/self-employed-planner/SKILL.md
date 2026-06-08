@@ -14,7 +14,7 @@ no limits/thresholds/defaults of its own, and is read-only. The server is the so
 ## Step 0 — Make sure the planfi tools are connected
 
 This skill uses these tools (may be namespaced, e.g. `mcp__planfi__analyze_self_employed_retirement`):
-`analyze_self_employed_retirement`, `optimize_multi_year_tax`, plus optional
+`analyze_self_employed_retirement`, `analyze_estimated_taxes`, `optimize_multi_year_tax`, plus optional
 `generate_financial_plan` (to mint a `plan_id` for chaining + the only `share_url`). Use whichever
 name your environment exposes (bare or `mcp__planfi__`-prefixed); below they are written bare.
 
@@ -86,6 +86,39 @@ estimate). The S-corp employer profit-share is 25% of W-2, so salary also drives
 analyze_self_employed_retirement({ entity_type: "s_corp", net_business_income: 150000,
   s_corp_w2_wages: 90000, s_corp_distributions: 60000, is_sstb: true, filing_status: "single" })
 ```
+
+### "What are my quarterly estimated payments? / will I owe an underpayment penalty?" → `analyze_estimated_taxes`
+Self-employed and S-corp owners have no automatic payroll withholding on business profit, so they
+must make quarterly estimated payments or face an IRC §6654 underpayment penalty. This tool projects
+current-year tax (SE tax, income tax, NIIT, optional flat state tax, QBI) and computes the
+**required annual payment (RAP)** — the smaller of the **90%-of-current-year** safe harbor and the
+**prior-year** safe harbor (**100%** of last year's tax, or **110%** if prior-year AGI > $150k). Pass
+the entity's projected income plus, when known, prior-year tax/AGI and any expected withholding.
+
+```
+analyze_estimated_taxes({ projected_se_income: 150000, prior_year_tax: 28000,
+  prior_year_agi: 160000, filing_status: "single" })
+```
+
+Read these blocks:
+- **`safe_harbor`** — `currentYearTarget` (0.9×), `priorYearTarget`, `priorYearPct` (1.0 or 1.1),
+  `highIncome`, `requiredAnnualPayment` (RAP), `bindingMethod` (`current_year_90` | `prior_year`),
+  and `reason` (which safe harbor binds and why). Prior-year safe harbor only applies when a prior
+  return was filed.
+- **`quarters`** — the four `{ dueDate, amount }` installments (Apr 15 / Jun 15 / Sep 15 / Jan 15),
+  `totalEstimatedPayments`, and `remainingPerQuarter` (after `paymentsMade`). Expected withholding is
+  treated as paid evenly across quarters and offsets the RAP (`underpaymentToCover`).
+- **`underpaymentRisk`** — `covered` (withholding + payments ≥ RAP), `shortfall`, and a `note`. The
+  annualized-income installment method (Form 2210 Sch AI) and the exact penalty dollar amount are out
+  of scope — guidance is simply to pay the safe-harbor amount to avoid the penalty entirely.
+
+This tool emits a structured `assumed_defaults[]` (each `{ field, assumed_value, note }`) for anything
+omitted — surface it so the user can correct income, filing status, prior-year figures, etc. and
+re-call. It accepts `{ plan_id }` (to derive age / filing status / other income from a saved plan) and
+chains via `next_actions[]`. **Coordinate with `analyze_self_employed_retirement`:** a larger pre-tax
+Solo 401(k)/SEP contribution lowers taxable income and therefore the estimated bill, so size the
+contribution first, then feed the resulting income into the estimated-tax projection. Chain to
+`optimize_multi_year_tax` for cross-year coordination.
 
 ### "Coordinate this across years / with ISO exercises + Roth conversions" → `optimize_multi_year_tax`
 After sizing the contribution, chain to `optimize_multi_year_tax` (AMT-crossover / NIIT-threshold /

@@ -12,7 +12,7 @@
     {
       "name": "self-employed-planner",
       "source": "./skills/self-employed-planner",
-      "description": "Plan self-employed / business-owner retirement: max Solo 401(k) vs SEP-IRA vs SIMPLE contribution room, the §199A QBI deduction (thresholds, W-2/UBIA cap, SSTB phaseout), and the S-corp reasonable-salary tradeoff (payroll tax vs QBI vs retirement room). Thin orchestration over the planfi MCP.",
+      "description": "Plan self-employed / business-owner retirement: max Solo 401(k) vs SEP-IRA vs SIMPLE contribution room, the §199A QBI deduction (thresholds, W-2/UBIA cap, SSTB phaseout), the S-corp reasonable-salary tradeoff (payroll tax vs QBI vs retirement room), and estimated/quarterly tax & 90%/110% safe-harbor planning to avoid underpayment penalties. Thin orchestration over the planfi MCP.",
       "version": "1.0.0",
       "license": "MIT",
       "author": {
