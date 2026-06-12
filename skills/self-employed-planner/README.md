@@ -16,6 +16,7 @@ contractors):
 - **What's my §199A QBI deduction** (taxable-income thresholds, W-2-wage / 2.5%-UBIA cap, SSTB phaseout)?
 - **(S-corp)** What **reasonable W-2 salary** optimizes payroll tax ↔ QBI ↔ retirement contribution room?
 - **Quarterly estimated taxes & safe-harbor** — what to pay each quarter and the 90%/110% safe-harbor thresholds to avoid an underpayment penalty (`analyze_estimated_taxes`)?
+- **Cash-balance / defined-benefit plan** — for a profitable 45–60yo owner, how much can a DB/cash-balance plan stacked on the Solo 401(k) let me deduct (actuarial annual contribution, §415(b) cap, combined deductible + tax saved), and does a SEP-IRA block my backdoor Roth? (`analyze_owner_cash_balance_db`)
 
 It wraps `analyze_self_employed_retirement` (the headline tool) and chains `optimize_multi_year_tax`
 for cross-year coordination; optionally mint a `plan_id` via `generate_financial_plan` for a
@@ -31,6 +32,10 @@ analyze_self_employed_retirement({ entity_type: "sole_prop", net_business_income
 # S-corp consulting owner, "what salary should I pay myself?"
 analyze_self_employed_retirement({ entity_type: "s_corp", net_business_income: 150000,
   s_corp_w2_wages: 90000, s_corp_distributions: 60000, is_sstb: true, filing_status: "single" })
+
+# Profitable 50yo owner, "how much can a cash-balance / DB plan let me deduct?"
+analyze_owner_cash_balance_db({ entity: "sole_prop", net_business_income: 400000,
+  owner_age: 50, normal_retirement_age: 62, filing_status: "single" })
 ```
 
 *(Fictional figures only — never reuse a real user's numbers.)*

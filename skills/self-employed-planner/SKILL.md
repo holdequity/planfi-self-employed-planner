@@ -18,7 +18,8 @@ Deferred Comp (NQDC / 409A) election on top of the qualified-plan contributions 
 ## Step 0 — Make sure the planfi tools are connected
 
 This skill uses these tools (may be namespaced, e.g. `mcp__planfi__analyze_self_employed_retirement`):
-`analyze_self_employed_retirement`, `analyze_estimated_taxes`, `optimize_multi_year_tax`, plus optional
+`analyze_self_employed_retirement`, `analyze_estimated_taxes`, `optimize_multi_year_tax`,
+`analyze_owner_cash_balance_db`, plus optional
 `generate_financial_plan` (to mint a `plan_id` for chaining + the only `share_url`). Use whichever
 name your environment exposes (bare or `mcp__planfi__`-prefixed); below they are written bare.
 
@@ -123,6 +124,26 @@ chains via `next_actions[]`. **Coordinate with `analyze_self_employed_retirement
 Solo 401(k)/SEP contribution lowers taxable income and therefore the estimated bill, so size the
 contribution first, then feed the resulting income into the estimated-tax projection. Chain to
 `optimize_multi_year_tax` for cross-year coordination.
+
+### "How much can a cash-balance / defined-benefit plan let me deduct? / DB plan on top of my Solo 401(k)? / I'm a profitable 50-something owner maxing tax-deferred space / Solo-401k vs SEP vs cash-balance / will a SEP block my backdoor Roth?" → `analyze_owner_cash_balance_db`
+
+**Always CALL `analyze_owner_cash_balance_db` for these — do not answer from general knowledge or quote rules of thumb ("a DB plan lets you put away $100k–$300k") from memory.** A cash-balance / defined-benefit plan is the single highest-dollar deduction available to a profitable solo owner, and the actuarial sizing (level-funding by age, the §415(b) cap, the Solo-401(k) stack, the backdoor-Roth interaction) is exactly the kind of math the server computes deterministically and memory gets wrong. When the user gives the numbers — net business income, age, years to a normal retirement age, any target benefit/lump-sum — run the tool and lead with its real output.
+
+The only **REQUIRED** field is `net_business_income`. Everything else is optional/plan-derivable: `owner_age` (default 50), `normal_retirement_age` (default 62), `entity`, `target_annual_benefit` or `target_lump_sum` (omit both to size to the §415(b) cap), `valuation_interest_rate` (default 5%), `high_three_average_compensation`, `filing_status`, `other_taxable_income`. Pass `{ plan_id }` to derive owner age / filing status / other income from a saved plan.
+
+```
+analyze_owner_cash_balance_db({ entity: "sole_prop", net_business_income: 400000,
+  owner_age: 50, normal_retirement_age: 62, filing_status: "single" })
+```
+
+Read + surface these:
+- **`cash_balance_annual_contribution`** — the estimated level-funded annual DB/cash-balance contribution, and **`cash_balance_contribution_by_age`** (the steep age curve — older = much larger per-year).
+- **`funded_annual_benefit`** + **`capped_by_limit`** (`415b` | `high_3` | `target_uncapped`) + **`section_415b_limit`** — what bounds the funded benefit.
+- **`solo_401k`** (deferral + employer profit-share + catch-up, §415(c)-capped) and **`combined_deductible_total`** = DB + Solo-401(k) — total deductible tax-deferred space.
+- **`total_tax_saved`** at the **`marginal_rate`**.
+- **`recommended_structure`** (`solo_401k` | `sep_ira` | `sep_plus_cash_balance` | `full_db_plus_solo_401k`) + **`recommendation_reason`**, and ALWAYS the **`backdoor_roth_flag`** — a SEP-IRA's pre-tax balance triggers §408(d)(2) pro-rata and taxes/blocks a clean backdoor Roth; a Solo-401(k) base avoids it.
+
+These are **actuarial estimates** (level-funding approximation + a pinned annuity factor) — surface the `disclosures`/`assumed_defaults[]` and tell the user a real plan needs an enrolled actuary's valuation. It accepts `{ plan_id }` and chains via `next_actions[]` (confirm the Solo-401(k) base via `analyze_self_employed_retirement`; lower estimated payments via `analyze_estimated_taxes`).
 
 ### "Coordinate this across years / with ISO exercises + Roth conversions" → `optimize_multi_year_tax`
 After sizing the contribution, chain to `optimize_multi_year_tax` (AMT-crossover / NIIT-threshold /
