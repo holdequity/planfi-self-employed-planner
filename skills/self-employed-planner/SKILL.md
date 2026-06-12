@@ -11,6 +11,10 @@ All self-employment-tax, contribution-limit, QBI, and S-corp-salary math lives s
 skill only gathers inputs and calls the tools — it does **not** compute anything locally, bakes in
 no limits/thresholds/defaults of its own, and is read-only. The server is the source of truth.
 
+**Related skills:** owner-operators of a profitable S/C-corp can layer an employer Nonqualified
+Deferred Comp (NQDC / 409A) election on top of the qualified-plan contributions — see
+**deferred-comp** (`analyze_deferred_comp`) for the defer-now-vs-take-now / lump-vs-installment tradeoff.
+
 ## Step 0 — Make sure the planfi tools are connected
 
 This skill uses these tools (may be namespaced, e.g. `mcp__planfi__analyze_self_employed_retirement`):
