@@ -16,6 +16,7 @@ contractors):
 - **What's my §199A QBI deduction** (taxable-income thresholds, W-2-wage / 2.5%-UBIA cap, SSTB phaseout)?
 - **(S-corp)** What **reasonable W-2 salary** optimizes payroll tax ↔ QBI ↔ retirement contribution room?
 - **Quarterly estimated taxes & safe-harbor** — what to pay each quarter and the 90%/110% safe-harbor thresholds to avoid an underpayment penalty (`analyze_estimated_taxes`)?
+- **Lumpy / back-loaded income** (a Q4 RSU vest, a year-end S-corp distribution) — can I **annualize** my estimated payments (Form 2210 Schedule AI) to defer them legally without a §6654 penalty, and how much penalty does that avoid vs paying even quarters? (`analyze_estimated_tax_annualized`)
 - **Cash-balance / defined-benefit plan** — for a profitable 45–60yo owner, how much can a DB/cash-balance plan stacked on the Solo 401(k) let me deduct (actuarial annual contribution, §415(b) cap, combined deductible + tax saved), and does a SEP-IRA block my backdoor Roth? (`analyze_owner_cash_balance_db`)
 
 It wraps `analyze_self_employed_retirement` (the headline tool) and chains `optimize_multi_year_tax`

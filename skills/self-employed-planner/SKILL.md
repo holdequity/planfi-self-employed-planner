@@ -18,8 +18,8 @@ Deferred Comp (NQDC / 409A) election on top of the qualified-plan contributions 
 ## Step 0 — Make sure the planfi tools are connected
 
 This skill uses these tools (may be namespaced, e.g. `mcp__planfi__analyze_self_employed_retirement`):
-`analyze_self_employed_retirement`, `analyze_estimated_taxes`, `optimize_multi_year_tax`,
-`analyze_owner_cash_balance_db`, plus optional
+`analyze_self_employed_retirement`, `analyze_estimated_taxes`, `analyze_estimated_tax_annualized`,
+`optimize_multi_year_tax`, `analyze_owner_cash_balance_db`, plus optional
 `generate_financial_plan` (to mint a `plan_id` for chaining + the only `share_url`). Use whichever
 name your environment exposes (bare or `mcp__planfi__`-prefixed); below they are written bare.
 
@@ -113,9 +113,10 @@ Read these blocks:
 - **`quarters`** — the four `{ dueDate, amount }` installments (Apr 15 / Jun 15 / Sep 15 / Jan 15),
   `totalEstimatedPayments`, and `remainingPerQuarter` (after `paymentsMade`). Expected withholding is
   treated as paid evenly across quarters and offsets the RAP (`underpaymentToCover`).
-- **`underpaymentRisk`** — `covered` (withholding + payments ≥ RAP), `shortfall`, and a `note`. The
-  annualized-income installment method (Form 2210 Sch AI) and the exact penalty dollar amount are out
-  of scope — guidance is simply to pay the safe-harbor amount to avoid the penalty entirely.
+- **`underpaymentRisk`** — `covered` (withholding + payments ≥ RAP), `shortfall`, and a `note`. This
+  tool assumes **even quarterly income**; if the income is lumpy / back-loaded, route to
+  `analyze_estimated_tax_annualized` instead (the annualized-income installment method, Form 2210
+  Schedule AI) for the exact per-period required installment and §6654 penalty dollar amount.
 
 This tool emits a structured `assumed_defaults[]` (each `{ field, assumed_value, note }`) for anything
 omitted — surface it so the user can correct income, filing status, prior-year figures, etc. and
@@ -124,6 +125,50 @@ chains via `next_actions[]`. **Coordinate with `analyze_self_employed_retirement
 Solo 401(k)/SEP contribution lowers taxable income and therefore the estimated bill, so size the
 contribution first, then feed the resulting income into the estimated-tax projection. Chain to
 `optimize_multi_year_tax` for cross-year coordination.
+
+### "My income came late / it's lumpy / I had a Q4 RSU vest or year-end S-corp distribution — do I have to pay even quarterly estimates? / can I defer estimated payments without a penalty? / annualized income installment method / Form 2210 Schedule AI" → `analyze_estimated_tax_annualized`
+
+**Always CALL `analyze_estimated_tax_annualized` for these — do not answer from general knowledge or quote rules of thumb (e.g. "just pay 25% each quarter" or "you can annualize") from memory. When the user gives the numbers, run it and lead with its real output.**
+
+Use this — NOT `analyze_estimated_taxes` — whenever the income is **uneven, back-loaded, or
+lumpy**: the even-quarter tool above assumes income arrives smoothly and will overstate the early
+installments (and the penalty) when most of the income lands late in the year. This tool implements
+the **annualized-income installment method (Form 2210 Schedule AI)**: it takes cumulative income
+through each of the 4 IRS periods (cutoffs 3/31, 5/31, 8/31, 12/31), annualizes via the period
+multipliers (4, 2.4, 1.5, 1), taxes each annualized amount, applies the cumulative percentages
+(22.5% / 45% / 67.5% / 90%), and nets out prior installments to give the **per-period required
+installment** — legally **deferring** payment for income that has not yet arrived (e.g. a Q4 RSU
+vest or year-end S-corp distribution) without triggering the §6654 penalty.
+
+It compares the annualized method to the even 25%-per-quarter safe harbor and the prior-year safe
+harbor (100% / 110% of last year's tax over $150k AGI), computes the §6654 underpayment penalty
+per period (federal short-term rate + 3%), and reports the **total penalty avoided** plus which
+safe harbor (annualized vs prior-year vs current-year-90%) is cheapest.
+
+> **Disambiguation (do NOT mis-route):** if the user's income is **even / steady / smooth** across
+> the year, use `analyze_estimated_taxes` (the even-quarter tool) — only use
+> `analyze_estimated_tax_annualized` when the income is explicitly uneven, lumpy, back-loaded, or
+> tied to a discrete late-year event.
+
+```
+analyze_estimated_tax_annualized({ entity: "sole_prop", filing_status: "single",
+  cumulative_income_by_period: [0, 0, 0, 100000], prior_year_return_filed: false })
+```
+
+Read these blocks:
+- **`periods`** — the 4 `{ cutoff, multiplier, applicablePct, annualizedIncome, annualizedTax,
+  annualizedInstallment, evenInstallment, penaltyAnnualized, penaltyEven }` rows.
+- **`recommendedSchedule`** — the `{ dueDate, amount }` installments to actually pay under the
+  annualized method.
+- **`penalty.penaltyAvoided`** — the §6654 dollars the annualized method saves vs paying even
+  quarters (the headline for back-loaded income).
+- **`cheapestSafeHarbor`** — `{ method: 'annualized' | 'prior_year' | 'current_year_90', amount,
+  reason }`.
+
+Emits `assumed_defaults[]`, accepts `{ plan_id }` (derives filing status / age / prior-year tax /
+AGI from a saved plan), surfaces `share_url`, and chains via `next_actions[]` — coordinate with
+`analyze_self_employed_retirement` (a pre-tax contribution lowers each annualized installment) and
+fall back to `analyze_estimated_taxes` for the even-income case.
 
 ### "How much can a cash-balance / defined-benefit plan let me deduct? / DB plan on top of my Solo 401(k)? / I'm a profitable 50-something owner maxing tax-deferred space / Solo-401k vs SEP vs cash-balance / will a SEP block my backdoor Roth?" → `analyze_owner_cash_balance_db`
 
