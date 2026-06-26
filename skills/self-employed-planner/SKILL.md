@@ -1,12 +1,12 @@
 ---
 name: self-employed-planner
-version: 1.0.0
+version: 1.0.1
 description: Plan self-employed / business-owner retirement and the §199A QBI deduction by orchestrating the public planfi MCP. Use whenever a freelancer, 1099 contractor, sole proprietor, single-member LLC, S-corp owner, or partner asks how much they can shelter in tax-advantaged retirement accounts (Solo 401(k) vs SEP-IRA vs SIMPLE IRA), which account wins, what their QBI / §199A deduction is, or — for an S-corp — what reasonable W-2 salary best trades off payroll tax vs the QBI deduction vs retirement contribution room — e.g. "I'm a 1099 consultant netting $200k, how much can I put in a Solo 401k?", "SEP vs Solo 401k for my LLC?", "what's my QBI deduction as a sole prop?", "what salary should I pay myself from my S-corp?".
 ---
 
 # Self-Employed Planner
 
-A thin orchestration layer over the **planfi MCP** (https://ai.planfi.app/mcp, public, no auth).
+A thin orchestration layer over the **planfi MCP** (https://ai.planfi.app/mcp).
 All self-employment-tax, contribution-limit, QBI, and S-corp-salary math lives server-side. This
 skill only gathers inputs and calls the tools — it does **not** compute anything locally, bakes in
 no limits/thresholds/defaults of its own, and is read-only. The server is the source of truth.
@@ -29,7 +29,10 @@ If they're NOT available, tell the user to connect the MCP, then continue:
 claude mcp add --transport http planfi https://ai.planfi.app/mcp
 ```
 
-(On claude.ai: add a custom connector pointing at https://ai.planfi.app/mcp — no auth.)
+(On claude.ai: add a custom connector pointing at https://ai.planfi.app/mcp.)
+
+> **Access — free for personal use.** The planfi MCP is free to try (a small monthly allowance, no key needed). Heavy automated abuse forced us to add limits — but it stays **free for personal use**: email **kam@rateapi.dev** and we'll send you a free API key, no charge. (Companies and commercial use have paid plans.) To use a key, pass it as an `Authorization: Bearer pft_…` header in your MCP client config.
+
 
 ## Step 1 — (Optional) build a plan first to chain context + get a share link
 
