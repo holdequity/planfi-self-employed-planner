@@ -2,7 +2,7 @@
 
 Plan self-employed / business-owner retirement (Solo 401k vs SEP vs SIMPLE) and the §199A QBI deduction via the planfi MCP
 
-It's a **thin orchestration layer** over the public **planfi MCP** (`https://ai.planfi.app/mcp`,
+It's a **thin orchestration layer** over the public **planfi MCP** (`https://ai.planfi.app/mcp/free`,
 public, no auth) — all the math and financial logic live server-side. The skill itself bundles no
 engine; it just gathers inputs and calls the tools.
 
@@ -46,11 +46,13 @@ analyze_owner_cash_balance_db({ entity: "sole_prop", net_business_income: 400000
 If the planfi tools aren't connected yet, run:
 
 ```
-claude mcp add --transport http planfi https://ai.planfi.app/mcp
+claude mcp add --transport http planfi https://ai.planfi.app/mcp/free
 ```
 
+> **Try free, then add your key.** The command above adds the **free** connector — `https://ai.planfi.app/mcp/free` (no key needed). Once you create an API key, add a **new** connector with the MCP url — `https://ai.planfi.app/mcp` — and authorize it with your key.
+
 On **claude.ai**: Settings → Connectors → add a custom connector pointing at
-`https://ai.planfi.app/mcp` (no auth). The skill also reminds you to do this if the tools are
+`https://ai.planfi.app/mcp/free` (no auth). The skill also reminds you to do this if the tools are
 missing when you invoke it.
 
 ## Install
